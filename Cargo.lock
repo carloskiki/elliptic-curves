@@ -531,8 +531,8 @@ name = "hash2curve"
 version = "0.14.0-rc.0"
 dependencies = [
  "digest",
- "elliptic-curve",
  "ff",
+ "group",
  "hex-literal",
  "sha2",
  "sha3",
