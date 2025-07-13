@@ -48,13 +48,13 @@ pub trait Suite {
     /// The ID of the suite.
     const ID: &'static str;
 
-    /// The point type used in the suite.
+    /// The point type.
     type Point: MapToCurve;
 
-    /// The security level of the suite.
+    /// The security level.
     type SecurityLevel: Unsigned;
 
-    /// The expand message trait used in the suite.
+    /// The expand message function.
     type ExpandMsg: ExpandMsg<Self::SecurityLevel>;
 
     /// Computes the hash to curve routine.
