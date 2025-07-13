@@ -3,7 +3,7 @@
 //! <https://www.rfc-editor.org/rfc/rfc9380.html>
 
 use core::ops::{AddAssign, Mul};
-use elliptic_curve::array::{Array, ArraySize, typenum::Unsigned};
+use digest::array::{Array, ArraySize, typenum::Unsigned};
 use ff::Field;
 
 /// The coefficients for mapping from one isogenous curve to another

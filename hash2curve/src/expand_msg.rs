@@ -6,8 +6,7 @@ pub(super) mod xof;
 use core::num::NonZero;
 
 use digest::{Digest, ExtendableOutput, Update, XofReader};
-use elliptic_curve::array::{Array, ArraySize};
-use elliptic_curve::{Error, Result};
+use digest::array::{Array, ArraySize};
 
 /// Salt when the DST is too long
 const OVERSIZE_DST_SALT: &[u8] = b"H2C-OVERSIZE-DST-";
@@ -34,7 +33,7 @@ pub trait ExpandMsg<K> {
         msg: &[&[u8]],
         dst: &'dst [&[u8]],
         len_in_bytes: NonZero<u16>,
-    ) -> Result<Self::Expander<'dst>>;
+    ) -> Option<Self::Expander<'dst>>;
 }
 
 /// Expander that, call `read` until enough bytes have been consumed.
@@ -57,16 +56,16 @@ pub(crate) enum Domain<'a, L: ArraySize> {
 }
 
 impl<'a, L: ArraySize> Domain<'a, L> {
-    pub fn xof<X>(dst: &'a [&'a [u8]]) -> Result<Self>
+    pub fn xof<X>(dst: &'a [&'a [u8]]) -> Option<Self>
     where
         X: Default + ExtendableOutput + Update,
     {
         // https://www.rfc-editor.org/rfc/rfc9380.html#section-3.1-4.2
         if dst.iter().map(|slice| slice.len()).sum::<usize>() == 0 {
-            Err(Error)
+            None
         } else if dst.iter().map(|slice| slice.len()).sum::<usize>() > MAX_DST_LEN {
             if L::USIZE > u8::MAX.into() {
-                return Err(Error);
+                return None;
             }
 
             let mut data = Array::<u8, L>::default();
@@ -79,25 +78,25 @@ impl<'a, L: ArraySize> Domain<'a, L> {
 
             hash.finalize_xof().read(&mut data);
 
-            Ok(Self::Hashed(data))
+            Some(Self::Hashed(data))
         } else {
-            Ok(Self::Array(dst))
+            Some(Self::Array(dst))
         }
     }
 
-    pub fn xmd<X>(dst: &'a [&'a [u8]]) -> Result<Self>
+    pub fn xmd<X>(dst: &'a [&'a [u8]]) -> Option<Self>
     where
         X: Digest<OutputSize = L>,
     {
         // https://www.rfc-editor.org/rfc/rfc9380.html#section-3.1-4.2
         if dst.iter().map(|slice| slice.len()).sum::<usize>() == 0 {
-            Err(Error)
+            None
         } else if dst.iter().map(|slice| slice.len()).sum::<usize>() > MAX_DST_LEN {
             if L::USIZE > u8::MAX.into() {
-                return Err(Error);
+                return None;
             }
 
-            Ok(Self::Hashed({
+            Some(Self::Hashed({
                 let mut hash = X::new();
                 hash.update(OVERSIZE_DST_SALT);
 
@@ -108,7 +107,7 @@ impl<'a, L: ArraySize> Domain<'a, L> {
                 hash.finalize()
             }))
         } else {
-            Ok(Self::Array(dst))
+            Some(Self::Array(dst))
         }
     }
 

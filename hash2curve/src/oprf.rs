@@ -1,14 +1,12 @@
 use digest::FixedOutput;
 use digest::Update;
-use elliptic_curve::PrimeCurve;
-use elliptic_curve::array::typenum::IsLess;
-use elliptic_curve::consts::{True, U65536};
+use digest::{array::typenum::IsLess, consts::{True, U65536}};
 
 use crate::ExpandMsg;
-use crate::GroupDigest;
 
+// TODO: requires `PrimeGroup`
 /// Elliptic curve parameters used by OPRF.
-pub trait OprfParameters: GroupDigest + PrimeCurve {
+pub trait OprfParameters {
     /// The `ID` parameter which identifies a particular elliptic curve
     /// as defined in [section 4 of RFC9497][oprf].
     ///
@@ -25,5 +23,5 @@ pub trait OprfParameters: GroupDigest + PrimeCurve {
     /// and `HashToScalar` as defined in [section 4 of RFC9497][oprf].
     ///
     /// [oprf]: https://www.rfc-editor.org/rfc/rfc9497.html#name-ciphersuites
-    type ExpandMsg: ExpandMsg<<Self as GroupDigest>::K>;
+    type ExpandMsg<K>: ExpandMsg<K>;
 }
