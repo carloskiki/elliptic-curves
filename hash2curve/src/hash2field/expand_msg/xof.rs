@@ -1,9 +1,10 @@
 //! `expand_message_xof` for the `ExpandMsg` trait
 
-use super::{Domain, ExpandMsg, Expander};
+use super::{Domain, ExpandMsg};
 use core::{fmt, num::NonZero, ops::Mul};
+use digest::XofReader;
 use digest::{
-    CollisionResistance, ExtendableOutput, HashMarker, Update, XofReader, typenum::IsGreaterOrEqual,
+    CollisionResistance, ExtendableOutput, HashMarker, Update, typenum::IsGreaterOrEqual,
 };
 use elliptic_curve::Result;
 use elliptic_curve::array::{
@@ -21,7 +22,7 @@ pub struct ExpandMsgXof<HashT>
 where
     HashT: Default + ExtendableOutput + Update + HashMarker,
 {
-    reader: <HashT as ExtendableOutput>::Reader,
+    reader: HashT::Reader,
 }
 
 impl<HashT> fmt::Debug for ExpandMsgXof<HashT>
@@ -36,7 +37,7 @@ where
     }
 }
 
-impl<HashT, K> ExpandMsg<K> for ExpandMsgXof<HashT>
+impl<HashT, K> ExpandMsg<'_, K> for ExpandMsgXof<HashT>
 where
     HashT: Default + ExtendableOutput + Update + HashMarker,
     // If DST is larger than 255 bytes, the length of the computed DST is calculated by `K * 2`.
@@ -46,13 +47,7 @@ where
     // https://www.rfc-editor.org/rfc/rfc9380.html#section-5.3.2-2.1
     HashT: CollisionResistance<CollisionResistance: IsGreaterOrEqual<K, Output = True>>,
 {
-    type Expander<'dst> = Self;
-
-    fn expand_message<'dst>(
-        msg: &[&[u8]],
-        dst: &'dst [&[u8]],
-        len_in_bytes: NonZero<u16>,
-    ) -> Result<Self::Expander<'dst>> {
+    fn expand_message(msg: &[&[u8]], dst: &[&[u8]], len_in_bytes: NonZero<u16>) -> Result<Self> {
         let len_in_bytes = len_in_bytes.get();
 
         let domain = Domain::<Prod<K, U2>>::xof::<HashT>(dst)?;
@@ -70,12 +65,12 @@ where
     }
 }
 
-impl<HashT> Expander for ExpandMsgXof<HashT>
+impl<HashT> XofReader for ExpandMsgXof<HashT>
 where
     HashT: Default + ExtendableOutput + Update + HashMarker,
 {
-    fn fill_bytes(&mut self, okm: &mut [u8]) {
-        self.reader.read(okm);
+    fn read(&mut self, out: &mut [u8]) {
+        self.reader.read(out);
     }
 }
 
@@ -137,7 +132,7 @@ mod test {
             )?;
 
             let mut uniform_bytes = Array::<u8, L>::default();
-            expander.fill_bytes(&mut uniform_bytes);
+            expander.read(&mut uniform_bytes);
 
             assert_eq!(uniform_bytes.as_slice(), self.uniform_bytes);
             Ok(())
