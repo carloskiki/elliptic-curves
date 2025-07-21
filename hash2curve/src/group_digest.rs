@@ -1,8 +1,8 @@
 //! Traits for handling hash to curve.
 
 use super::{ExpandMsg, MapToCurve, hash_to_field};
+use elliptic_curve::ProjectivePoint;
 use elliptic_curve::array::typenum::Unsigned;
-use elliptic_curve::{ProjectivePoint, Result};
 
 /// Hash arbitrary byte sequences to a valid group element.
 pub trait GroupDigest: MapToCurve {
@@ -32,7 +32,10 @@ pub trait GroupDigest: MapToCurve {
     ///
     /// [`ExpandMsgXmd`]: crate::ExpandMsgXmd
     /// [`ExpandMsgXof`]: crate::ExpandMsgXof
-    fn hash_from_bytes<'dst, X>(msg: &[&[u8]], dst: &'dst [&[u8]]) -> Result<ProjectivePoint<Self>>
+    fn hash_from_bytes<'dst, X>(
+        msg: &[&[u8]],
+        dst: &'dst [&[u8]],
+    ) -> Result<ProjectivePoint<Self>, X::Error>
     where
         X: ExpandMsg<'dst, Self::K>,
     {
@@ -65,7 +68,7 @@ pub trait GroupDigest: MapToCurve {
     fn encode_from_bytes<'dst, X>(
         msg: &[&[u8]],
         dst: &'dst [&[u8]],
-    ) -> Result<ProjectivePoint<Self>>
+    ) -> Result<ProjectivePoint<Self>, X::Error>
     where
         X: ExpandMsg<'dst, Self::K>,
     {
@@ -88,7 +91,7 @@ pub trait GroupDigest: MapToCurve {
     ///
     /// [`ExpandMsgXmd`]: crate::ExpandMsgXmd
     /// [`ExpandMsgXof`]: crate::ExpandMsgXof
-    fn hash_to_scalar<'dst, X>(msg: &[&[u8]], dst: &'dst [&[u8]]) -> Result<Self::Scalar>
+    fn hash_to_scalar<'dst, X>(msg: &[&[u8]], dst: &'dst [&[u8]]) -> Result<Self::Scalar, X::Error>
     where
         X: ExpandMsg<'dst, Self::K>,
     {

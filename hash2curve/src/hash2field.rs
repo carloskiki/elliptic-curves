@@ -12,7 +12,6 @@ use elliptic_curve::array::{
     Array, ArraySize,
     typenum::{NonZero, Unsigned},
 };
-use elliptic_curve::{Error, Result};
 
 /// The trait for helping to convert to a field element.
 pub trait FromOkm {
@@ -41,16 +40,14 @@ pub trait FromOkm {
 pub fn hash_to_field<'dst, const N: usize, E, K, T>(
     data: &[&[u8]],
     domain: &'dst [&[u8]],
-) -> Result<[T; N]>
+) -> Result<[T; N], E::Error>
 where
     E: ExpandMsg<'dst, K>,
     T: FromOkm + Default,
 {
-    let len_in_bytes = T::Length::USIZE
-        .checked_mul(N)
-        .and_then(|len| len.try_into().ok())
-        .and_then(NonZeroU16::new)
-        .ok_or(Error)?;
+    const { assert!(T::Length::USIZE * N <= u16::MAX as usize && T::Length::USIZE * N != 0) }
+    let len_in_bytes =
+        NonZeroU16::new(T::Length::U16 * N as u16).expect("should be checked in const assert");
     let mut expander = E::expand_message(data, domain, len_in_bytes)?;
     Ok(core::array::from_fn(|_| {
         T::from_okm(&expander.by_ref().take(T::Length::USIZE).collect())
