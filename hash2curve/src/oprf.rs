@@ -1,14 +1,16 @@
 use digest::FixedOutput;
 use digest::Update;
-use elliptic_curve::PrimeCurve;
-use elliptic_curve::array::typenum::IsLess;
-use elliptic_curve::consts::{True, U65536};
+use elliptic_curve::{
+    PrimeCurveArithmetic,
+    array::typenum::IsLess,
+    consts::{True, U65536},
+};
 
 use crate::ExpandMsg;
-use crate::GroupDigest;
+use crate::MapToCurve;
 
 /// Elliptic curve parameters used by OPRF.
-pub trait OprfParameters: GroupDigest + PrimeCurve {
+pub trait OprfParameters: PrimeCurveArithmetic<ProjectivePoint: MapToCurve> {
     /// The `ID` parameter which identifies a particular elliptic curve
     /// as defined in [section 4 of RFC9497][oprf].
     ///
@@ -25,5 +27,5 @@ pub trait OprfParameters: GroupDigest + PrimeCurve {
     /// and `HashToScalar` as defined in [section 4 of RFC9497][oprf].
     ///
     /// [oprf]: https://www.rfc-editor.org/rfc/rfc9497.html#name-ciphersuites
-    type ExpandMsg: ExpandMsg<<Self as GroupDigest>::K>;
+    type ExpandMsg: ExpandMsg<<Self::ProjectivePoint as MapToCurve>::K>;
 }

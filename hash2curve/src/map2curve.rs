@@ -1,11 +1,16 @@
 //! Traits for mapping field elements to points on the curve.
 
+use digest::typenum::Unsigned;
 use elliptic_curve::group::Group;
 use super::FromOkm;
 
 /// Trait for converting field elements into a point via a mapping method like
 /// Simplified Shallue-van de Woestijne-Ulas or Elligator.
 pub trait MapToCurve: Group<Scalar: FromOkm> {
+    /// The target security level in bytes:
+    /// <https://www.rfc-editor.org/rfc/rfc9380.html#section-8.9-2.2>
+    /// <https://www.rfc-editor.org/rfc/rfc9380.html#name-target-security-levels>
+    type K: Unsigned;
     /// The intermediate representation, an element of the curve which may or may not
     /// be in the curve subgroup.
     type CurvePoint;
