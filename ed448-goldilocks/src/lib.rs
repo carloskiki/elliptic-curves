@@ -70,7 +70,6 @@ use elliptic_curve::{
     bigint::{ArrayEncoding, U448},
     point::PointCompression,
 };
-use hash2curve::GroupDigest;
 
 /// Edwards448 curve.
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -117,10 +116,6 @@ impl elliptic_curve::CurveArithmetic for Ed448 {
     type Scalar = EdwardsScalar;
 }
 
-impl GroupDigest for Ed448 {
-    type K = U28;
-}
-
 /// Decaf448 curve.
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Decaf448;
@@ -164,8 +159,4 @@ impl elliptic_curve::CurveArithmetic for Decaf448 {
     type AffinePoint = DecafAffinePoint;
     type ProjectivePoint = DecafPoint;
     type Scalar = DecafScalar;
-}
-
-impl GroupDigest for Decaf448 {
-    type K = U28;
 }

@@ -103,8 +103,8 @@ impl FromOkm for EdwardsScalar {
 #[cfg(test)]
 mod test {
     use super::*;
-    use elliptic_curve::array::Array;
-    use hash2curve::GroupDigest;
+    use elliptic_curve::{array::Array, consts::U28};
+    use hash2curve::hash_to_field;
     use hex_literal::hex;
 
     #[test]
@@ -313,7 +313,11 @@ mod test {
     fn scalar_hash() {
         let msg = b"hello world";
         let dst = b"edwards448_XOF:SHAKE256_ELL2_RO_";
-        let res = Ed448::hash_to_scalar::<hash2curve::ExpandMsgXof<sha3::Shake256>>(&[msg], &[dst])
+        let [res] =
+            hash_to_field::<1, EdwardsScalar, hash2curve::ExpandMsgXof<sha3::Shake256>, U28>(
+                &[msg],
+                &[dst],
+            )
             .unwrap();
         let expected: [u8; 57] = hex_literal::hex!(
             "2d32a08f09b88275cc5f437e625696b18de718ed94559e17e4d64aafd143a8527705132178b5ce7395ea6214735387398a35913656b4951300"

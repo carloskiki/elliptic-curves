@@ -5,7 +5,7 @@ use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use crate::curve::scalar_mul::variable_base;
 use crate::curve::twedwards::extended::ExtendedPoint as TwistedExtendedPoint;
-use crate::field::FieldElement;
+use crate::field::{Ed448FieldElement, FieldElement};
 use crate::*;
 use elliptic_curve::{
     CurveGroup, Error,
@@ -14,7 +14,7 @@ use elliptic_curve::{
     ops::LinearCombination,
     point::NonIdentity,
 };
-use hash2curve::ExpandMsgXof;
+use hash2curve::{ExpandMsgXof, MapToCurve, encode_to_curve, hash_to_curve};
 use rand_core::TryRngCore;
 use subtle::{Choice, ConditionallyNegatable, ConditionallySelectable, ConstantTimeEq, CtOption};
 
@@ -401,6 +401,24 @@ impl CofactorGroup for EdwardsPoint {
 
 impl PrimeGroup for EdwardsPoint {}
 
+impl MapToCurve for EdwardsPoint {
+    type CurvePoint = EdwardsPoint;
+    type FieldElement = Ed448FieldElement;
+    type K = U28;
+
+    fn map_to_curve(element: Ed448FieldElement) -> Self::CurvePoint {
+        element.0.map_to_curve_elligator2().isogeny().to_edwards()
+    }
+
+    fn map_to_subgroup(point: EdwardsPoint) -> EdwardsPoint {
+        point.clear_cofactor()
+    }
+
+    fn add_and_map_to_subgroup(lhs: EdwardsPoint, rhs: EdwardsPoint) -> EdwardsPoint {
+        (lhs + rhs).clear_cofactor()
+    }
+}
+
 #[cfg(feature = "alloc")]
 impl From<EdwardsPoint> for Vec<u8> {
     fn from(value: EdwardsPoint) -> Self {
@@ -731,7 +749,7 @@ impl EdwardsPoint {
     /// Hash using the default domain separation tag and hash function.
     /// For more control see [`GroupDigest::hash_from_bytes()`].
     pub fn hash_with_defaults(msg: &[u8]) -> Self {
-        Ed448::hash_from_bytes::<ExpandMsgXof<sha3::Shake256>>(
+        hash_to_curve::<EdwardsPoint, ExpandMsgXof<sha3::Shake256>>(
             &[msg],
             &[DEFAULT_HASH_TO_CURVE_SUITE],
         )
@@ -743,7 +761,7 @@ impl EdwardsPoint {
     /// Encode using the default domain separation tag and hash function.
     /// For more control see [`GroupDigest::encode_from_bytes()`].
     pub fn encode_with_defaults(msg: &[u8]) -> Self {
-        Ed448::encode_from_bytes::<ExpandMsgXof<sha3::Shake256>>(
+        encode_to_curve::<EdwardsPoint, ExpandMsgXof<sha3::Shake256>>(
             &[msg],
             &[DEFAULT_ENCODE_TO_CURVE_SUITE],
         )
@@ -1133,7 +1151,8 @@ mod tests {
         ];
 
         for (msg, x, y) in MSGS {
-            let p = Ed448::hash_from_bytes::<ExpandMsgXof<sha3::Shake256>>(&[msg], &[DST]).unwrap();
+            let p = hash_to_curve::<EdwardsPoint, ExpandMsgXof<sha3::Shake256>>(&[msg], &[DST])
+                .unwrap();
             assert_eq!(p.is_on_curve().unwrap_u8(), 1u8);
             let p = p.to_affine();
             let mut xx = [0u8; 56];
@@ -1170,8 +1189,8 @@ mod tests {
         ];
 
         for (msg, x, y) in MSGS {
-            let p =
-                Ed448::encode_from_bytes::<ExpandMsgXof<sha3::Shake256>>(&[msg], &[DST]).unwrap();
+            let p = encode_to_curve::<EdwardsPoint, ExpandMsgXof<sha3::Shake256>>(&[msg], &[DST])
+                .unwrap();
             assert_eq!(p.is_on_curve().unwrap_u8(), 1u8);
             let p = p.to_affine();
             let mut xx = [0u8; 56];

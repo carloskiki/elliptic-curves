@@ -34,7 +34,9 @@ pub use map2curve::*;
 pub use oprf::*;
 pub use osswu::*;
 
-use elliptic_curve::Result;
+use elliptic_curve::{Error, Result};
+use core::num::NonZeroU16;
+use digest::{array::Array, typenum::Unsigned};
 
 /// Computes the hash to curve routine.
 ///
@@ -57,12 +59,12 @@ use elliptic_curve::Result;
 ///
 /// [`ExpandMsgXmd`]: crate::ExpandMsgXmd
 /// [`ExpandMsgXof`]: crate::ExpandMsgXof
-pub fn hash_to_curve<X, P>(msg: &[&[u8]], dst: &[&[u8]]) -> Result<P>
+pub fn hash_to_curve<P, X>(msg: &[&[u8]], dst: &[&[u8]]) -> Result<P>
 where
     P: MapToCurve,
     X: ExpandMsg<P::K>,
 {
-    let [u0, u1] = hash_to_field::<2, X, _, P::FieldElement>(msg, dst)?;
+    let [u0, u1] = hash_to_field::<2, P::FieldElement, X, _>(msg, dst)?;
     let q0 = P::map_to_curve(u0);
     let q1 = P::map_to_curve(u1);
     Ok(P::add_and_map_to_subgroup(q0, q1))
@@ -88,12 +90,44 @@ where
 ///
 /// [`ExpandMsgXmd`]: crate::ExpandMsgXmd
 /// [`ExpandMsgXof`]: crate::ExpandMsgXof
-pub fn encode_to_curve<X, P>(msg: &[&[u8]], dst: &[&[u8]]) -> Result<P>
+pub fn encode_to_curve<P, X>(msg: &[&[u8]], dst: &[&[u8]]) -> Result<P>
 where
     P: MapToCurve,
     X: ExpandMsg<P::K>,
 {
-    let [u] = hash_to_field::<1, X, _, P::FieldElement>(msg, dst)?;
+    let [u] = hash_to_field::<1, P::FieldElement, X, _>(msg, dst)?;
     let q0 = P::map_to_curve(u);
     Ok(P::map_to_subgroup(q0))
+}
+
+/// Convert an arbitrary byte sequence into a field element.
+///
+/// <https://www.rfc-editor.org/rfc/rfc9380.html#name-hash_to_field-implementatio>
+///
+/// # Errors
+/// - `len_in_bytes > u16::MAX`
+/// - See implementors of [`ExpandMsg`] for additional errors:
+///   - [`ExpandMsgXmd`]
+///   - [`ExpandMsgXof`]
+///
+/// `len_in_bytes = T::Length * out.len()`
+///
+/// [`ExpandMsgXmd`]: crate::hash2field::ExpandMsgXmd
+/// [`ExpandMsgXof`]: crate::hash2field::ExpandMsgXof
+pub fn hash_to_field<const N: usize, T, E, K>(data: &[&[u8]], domain: &[&[u8]]) -> Result<[T; N]>
+where
+    E: ExpandMsg<K>,
+    T: FromOkm + Default,
+{
+    let len_in_bytes = T::Length::USIZE
+        .checked_mul(N)
+        .and_then(|len| len.try_into().ok())
+        .and_then(NonZeroU16::new)
+        .ok_or(Error)?;
+    let mut tmp = Array::<u8, <T as FromOkm>::Length>::default();
+    let mut expander = E::expand_message(data, domain, len_in_bytes)?;
+    Ok(core::array::from_fn(|_| {
+        expander.fill_bytes(&mut tmp);
+        T::from_okm(&tmp)
+    }))
 }

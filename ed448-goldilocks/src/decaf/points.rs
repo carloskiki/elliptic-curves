@@ -1,4 +1,4 @@
-use crate::constants::DECAF_BASEPOINT;
+use crate::{constants::DECAF_BASEPOINT, field::Decaf448FieldElement};
 use crate::curve::twedwards::extended::ExtendedPoint;
 use crate::field::FieldElement;
 use crate::*;
@@ -11,6 +11,7 @@ use elliptic_curve::{
     ops::LinearCombination,
     point::NonIdentity,
 };
+use hash2curve::MapToCurve;
 
 use core::fmt::{Display, Formatter, LowerHex, Result as FmtResult, UpperHex};
 use rand_core::{CryptoRng, TryRngCore};
@@ -231,6 +232,21 @@ impl CofactorGroup for DecafPoint {
 }
 
 impl PrimeGroup for DecafPoint {}
+
+
+impl MapToCurve for DecafPoint {
+    type CurvePoint = DecafPoint;
+    type FieldElement = Decaf448FieldElement;
+    type K = U28;
+
+    fn map_to_curve(element: Decaf448FieldElement) -> DecafPoint {
+        DecafPoint(element.0.map_to_curve_decaf448())
+    }
+
+    fn map_to_subgroup(point: DecafPoint) -> DecafPoint {
+        point
+    }
+}
 
 impl<const N: usize> LinearCombination<[(DecafPoint, DecafScalar); N]> for DecafPoint {}
 
@@ -590,6 +606,8 @@ impl From<NonIdentity<DecafPoint>> for DecafPoint {
 
 #[cfg(test)]
 mod test {
+    use hash2curve::hash_to_curve;
+
     use super::*;
     use crate::TWISTED_EDWARDS_BASE_POINT;
 
@@ -744,7 +762,7 @@ mod test {
         use hash2curve::ExpandMsgXof;
 
         let msg = b"Hello, world!";
-        let point = Decaf448::hash_from_bytes::<ExpandMsgXof<sha3::Shake256>>(
+        let point = hash_to_curve::<DecafPoint, ExpandMsgXof<sha3::Shake256>>(
             &[msg],
             &[b"test_hash_to_curve"],
         )

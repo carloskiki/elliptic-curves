@@ -3,8 +3,7 @@ use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use super::ConstMontyType;
 use crate::{
-    AffinePoint, Decaf448, DecafPoint, Ed448, EdwardsPoint,
-    curve::twedwards::extended::ExtendedPoint as TwistedExtendedPoint,
+    AffinePoint, curve::twedwards::extended::ExtendedPoint as TwistedExtendedPoint,
 };
 use elliptic_curve::{
     array::Array,
@@ -12,10 +11,9 @@ use elliptic_curve::{
         Integer, NonZero, U448, U704,
         consts::{U56, U84, U88},
     },
-    group::cofactor::CofactorGroup,
     zeroize::DefaultIsZeroes,
 };
-use hash2curve::{FromOkm, MapToCurve};
+use hash2curve::FromOkm;
 use subtle::{Choice, ConditionallyNegatable, ConditionallySelectable, ConstantTimeEq};
 
 #[derive(Clone, Copy, Default)]
@@ -190,40 +188,10 @@ impl Neg for FieldElement {
 }
 
 #[derive(Clone, Copy, Default, Debug)]
-pub struct Ed448FieldElement(FieldElement);
-
-impl MapToCurve for Ed448 {
-    type CurvePoint = EdwardsPoint;
-    type FieldElement = Ed448FieldElement;
-
-    fn map_to_curve(element: Ed448FieldElement) -> Self::CurvePoint {
-        element.0.map_to_curve_elligator2().isogeny().to_edwards()
-    }
-
-    fn map_to_subgroup(point: EdwardsPoint) -> EdwardsPoint {
-        point.clear_cofactor()
-    }
-
-    fn add_and_map_to_subgroup(lhs: EdwardsPoint, rhs: EdwardsPoint) -> EdwardsPoint {
-        (lhs + rhs).clear_cofactor()
-    }
-}
+pub struct Ed448FieldElement(pub(crate) FieldElement);
 
 #[derive(Clone, Copy, Default, Debug)]
-pub struct Decaf448FieldElement(FieldElement);
-
-impl MapToCurve for Decaf448 {
-    type CurvePoint = DecafPoint;
-    type FieldElement = Decaf448FieldElement;
-
-    fn map_to_curve(element: Decaf448FieldElement) -> DecafPoint {
-        DecafPoint(element.0.map_to_curve_decaf448())
-    }
-
-    fn map_to_subgroup(point: DecafPoint) -> DecafPoint {
-        point
-    }
-}
+pub struct Decaf448FieldElement(pub(crate) FieldElement);
 
 impl FieldElement {
     pub const A_PLUS_TWO_OVER_FOUR: Self = Self(ConstMontyType::new(&U448::from_be_hex(
