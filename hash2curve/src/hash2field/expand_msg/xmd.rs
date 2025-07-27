@@ -35,7 +35,7 @@ where
     remaining: u16,
 }
 
-impl<'dst, HashT, K> ExpandMsg<'dst, K> for ExpandMsgXmd<'dst, HashT>
+impl<HashT, K> ExpandMsg<K> for ExpandMsgXmd<'_, HashT>
 where
     HashT: BlockSizeUser + Default + FixedOutput + HashMarker,
     // The number of bits output by `HashT` MUST be at most `HashT::BlockSize`.
@@ -49,10 +49,13 @@ where
     type Error = ExpandMsgXmdError;
 
     fn expand_message(
+    type Expanded<'a> = ExpandMsgXmd<'a, HashT>;
+
+    fn expand_message<'a>(
         msg: &[&[u8]],
-        dst: &'dst [&[u8]],
+        dst: &'a [&[u8]],
         len_in_bytes: NonZero<u16>,
-    ) -> Result<Self, Self::Error> {
+    ) -> Result<Self::Expanded<'a>, Self::Error> {
         let b_in_bytes = HashT::OutputSize::USIZE;
 
         // `255 * <b_in_bytes>` can not exceed `u16::MAX`
@@ -81,7 +84,7 @@ where
         b_vals.update(&[domain.len()]);
         let b_vals = b_vals.finalize_fixed();
 
-        Ok(Self {
+        Ok(ExpandMsgXmd {
             b_0,
             b_vals,
             domain,

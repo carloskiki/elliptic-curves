@@ -38,7 +38,7 @@ where
     }
 }
 
-impl<HashT, K> ExpandMsg<'_, K> for ExpandMsgXof<HashT>
+impl<HashT, K> ExpandMsg<K> for ExpandMsgXof<HashT>
 where
     HashT: Default + ExtendableOutput + Update + HashMarker,
     // If DST is larger than 255 bytes, the length of the computed DST is calculated by `K * 2`.
@@ -49,6 +49,8 @@ where
     HashT: CollisionResistance<CollisionResistance: IsGreaterOrEqual<K, Output = True>>,
 {
     type Error = super::DSTError;
+
+    type Expanded<'a> = Self;
 
     fn expand_message(
         msg: &[&[u8]],

@@ -32,12 +32,12 @@ pub trait GroupDigest: MapToCurve {
     ///
     /// [`ExpandMsgXmd`]: crate::ExpandMsgXmd
     /// [`ExpandMsgXof`]: crate::ExpandMsgXof
-    fn hash_from_bytes<'dst, X>(
+    fn hash_from_bytes<X>(
         msg: &[&[u8]],
-        dst: &'dst [&[u8]],
+        dst: &[&[u8]],
     ) -> Result<ProjectivePoint<Self>, X::Error>
     where
-        X: ExpandMsg<'dst, Self::K>,
+        X: ExpandMsg<Self::K>,
     {
         let [u0, u1] = hash_to_field::<2, X, _, Self::FieldElement>(msg, dst)?;
         let q0 = Self::map_to_curve(u0);
@@ -65,12 +65,12 @@ pub trait GroupDigest: MapToCurve {
     ///
     /// [`ExpandMsgXmd`]: crate::ExpandMsgXmd
     /// [`ExpandMsgXof`]: crate::ExpandMsgXof
-    fn encode_from_bytes<'dst, X>(
+    fn encode_from_bytes<X>(
         msg: &[&[u8]],
-        dst: &'dst [&[u8]],
+        dst: &[&[u8]],
     ) -> Result<ProjectivePoint<Self>, X::Error>
     where
-        X: ExpandMsg<'dst, Self::K>,
+        X: ExpandMsg<Self::K>,
     {
         let [u] = hash_to_field::<1, X, _, Self::FieldElement>(msg, dst)?;
         let q0 = Self::map_to_curve(u);
@@ -91,9 +91,9 @@ pub trait GroupDigest: MapToCurve {
     ///
     /// [`ExpandMsgXmd`]: crate::ExpandMsgXmd
     /// [`ExpandMsgXof`]: crate::ExpandMsgXof
-    fn hash_to_scalar<'dst, X>(msg: &[&[u8]], dst: &'dst [&[u8]]) -> Result<Self::Scalar, X::Error>
+    fn hash_to_scalar<X>(msg: &[&[u8]], dst: &[&[u8]]) -> Result<Self::Scalar, X::Error>
     where
-        X: ExpandMsg<'dst, Self::K>,
+        X: ExpandMsg<Self::K>,
     {
         let [u] = hash_to_field::<1, X, _, Self::Scalar>(msg, dst)?;
         Ok(u)

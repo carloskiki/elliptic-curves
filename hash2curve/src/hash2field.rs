@@ -37,12 +37,9 @@ pub trait FromOkm {
 /// [`ExpandMsgXmd`]: crate::hash2field::ExpandMsgXmd
 /// [`ExpandMsgXof`]: crate::hash2field::ExpandMsgXof
 #[doc(hidden)]
-pub fn hash_to_field<'dst, const N: usize, E, K, T>(
-    data: &[&[u8]],
-    domain: &'dst [&[u8]],
-) -> Result<[T; N], E::Error>
+pub fn hash_to_field<const N: usize, E, K, T>(data: &[&[u8]], domain: &[&[u8]]) -> Result<[T; N], E::Error>
 where
-    E: ExpandMsg<'dst, K>,
+    E: ExpandMsg<K>,
     T: FromOkm + Default,
 {
     const { assert!(T::Length::USIZE * N <= u16::MAX as usize && T::Length::USIZE * N != 0) }
