@@ -45,9 +45,12 @@ where
     E: ExpandMsg<K>,
     T: FromOkm + Default,
 {
-    const { assert!(T::Length::USIZE * N <= u16::MAX as usize && T::Length::USIZE * N != 0) }
-    let len_in_bytes =
-        NonZeroU16::new(T::Length::U16 * N as u16).expect("should be checked in const assert");
+    // Completely degenerate case, `N` and `T::Length` would need to be extremely large.
+    const { assert!(T::Length::USIZE * N <= u16::MAX as usize) }
+    let Some(len_in_bytes) = NonZeroU16::new(T::Length::U16 * N as u16) else {
+        // Since `T::Length: NonZero`, only `N = 0` can lead to this case.
+        return Ok(core::array::from_fn(|_| T::default()));
+    };
     let mut expander = E::expand_message(data, domain, len_in_bytes)?;
     Ok(core::array::from_fn(|_| {
         T::from_okm(&expander.by_ref().take(T::Length::USIZE).collect())
