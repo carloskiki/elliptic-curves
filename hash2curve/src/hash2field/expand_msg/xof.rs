@@ -96,8 +96,6 @@ where
 
 #[cfg(test)]
 mod test {
-    use elliptic_curve::Error;
-
     use super::*;
     use core::mem::size_of;
     use elliptic_curve::array::{
@@ -148,7 +146,7 @@ mod test {
             let expander = <ExpandMsgXof<HashT> as ExpandMsg<U16>>::expand_message(
                 &[self.msg],
                 &[dst],
-                NonZero::new(L::U16).ok_or(Error).unwrap(),
+                NonZero::new(L::U16).unwrap(),
             )
             .unwrap();
 
