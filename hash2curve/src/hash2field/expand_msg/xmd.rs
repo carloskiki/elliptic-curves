@@ -48,7 +48,6 @@ where
 {
     type Error = ExpandMsgXmdError;
 
-    fn expand_message(
     type Expanded<'a> = ExpandMsgXmd<'a, HashT>;
 
     fn expand_message<'a>(

@@ -32,10 +32,7 @@ pub trait GroupDigest: MapToCurve {
     ///
     /// [`ExpandMsgXmd`]: crate::ExpandMsgXmd
     /// [`ExpandMsgXof`]: crate::ExpandMsgXof
-    fn hash_from_bytes<X>(
-        msg: &[&[u8]],
-        dst: &[&[u8]],
-    ) -> Result<ProjectivePoint<Self>, X::Error>
+    fn hash_from_bytes<X>(msg: &[&[u8]], dst: &[&[u8]]) -> Result<ProjectivePoint<Self>, X::Error>
     where
         X: ExpandMsg<Self::K>,
     {
@@ -65,10 +62,7 @@ pub trait GroupDigest: MapToCurve {
     ///
     /// [`ExpandMsgXmd`]: crate::ExpandMsgXmd
     /// [`ExpandMsgXof`]: crate::ExpandMsgXof
-    fn encode_from_bytes<X>(
-        msg: &[&[u8]],
-        dst: &[&[u8]],
-    ) -> Result<ProjectivePoint<Self>, X::Error>
+    fn encode_from_bytes<X>(msg: &[&[u8]], dst: &[&[u8]]) -> Result<ProjectivePoint<Self>, X::Error>
     where
         X: ExpandMsg<Self::K>,
     {
