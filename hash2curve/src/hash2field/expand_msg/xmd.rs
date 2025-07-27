@@ -21,21 +21,10 @@ use digest::{
 /// - `dst` contains no bytes
 /// - `dst > 255 && HashT::OutputSize > 255`
 /// - `len_in_bytes > 255 * HashT::OutputSize`
-#[derive(Debug)]
-pub struct ExpandMsgXmd<'a, HashT>
-where
-    HashT: BlockSizeUser + Default + FixedOutput + HashMarker,
-    HashT::OutputSize: IsLessOrEqual<HashT::BlockSize, Output = True>,
-{
-    b_0: Array<u8, HashT::OutputSize>,
-    b_vals: Array<u8, HashT::OutputSize>,
-    domain: Domain<'a, HashT::OutputSize>,
-    index: u8,
-    offset: usize,
-    remaining: u16,
-}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ExpandMsgXmd<HashT>(core::marker::PhantomData<HashT>);
 
-impl<HashT, K> ExpandMsg<K> for ExpandMsgXmd<'_, HashT>
+impl<HashT, K> ExpandMsg<K> for ExpandMsgXmd<HashT>
 where
     HashT: BlockSizeUser + Default + FixedOutput + HashMarker,
     // The number of bits output by `HashT` MUST be at most `HashT::BlockSize`.
@@ -48,7 +37,7 @@ where
 {
     type Error = ExpandMsgXmdError;
 
-    type Expanded<'a> = ExpandMsgXmd<'a, HashT>;
+    type Expanded<'a> = ExpandedXmd<'a, HashT>;
 
     fn expand_message<'a>(
         msg: &[&[u8]],
@@ -83,7 +72,7 @@ where
         b_vals.update(&[domain.len()]);
         let b_vals = b_vals.finalize_fixed();
 
-        Ok(ExpandMsgXmd {
+        Ok(ExpandedXmd {
             b_0,
             b_vals,
             domain,
@@ -94,7 +83,22 @@ where
     }
 }
 
-impl<HashT> Iterator for ExpandMsgXmd<'_, HashT>
+/// The expanded bytes of `expand_message_xmd`.
+#[derive(Debug)]
+pub struct ExpandedXmd<'a, HashT>
+where
+    HashT: BlockSizeUser + Default + FixedOutput + HashMarker,
+    HashT::OutputSize: IsLessOrEqual<HashT::BlockSize, Output = True>,
+{
+    b_0: Array<u8, HashT::OutputSize>,
+    b_vals: Array<u8, HashT::OutputSize>,
+    domain: Domain<'a, HashT::OutputSize>,
+    index: u8,
+    offset: usize,
+    remaining: u16,
+}
+
+impl<HashT> Iterator for ExpandedXmd<'_, HashT>
 where
     HashT: BlockSizeUser + Default + FixedOutput + HashMarker,
     HashT::OutputSize: IsLessOrEqual<HashT::BlockSize, Output = True> + IsLess<U256, Output = True>,

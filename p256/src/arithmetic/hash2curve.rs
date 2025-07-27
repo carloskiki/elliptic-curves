@@ -240,9 +240,8 @@ mod tests {
             assert_point_eq!(p, test_vector.p_x, test_vector.p_y);
 
             // complete run
-            let pt =
-                NistP256::hash_from_bytes::<ExpandMsgXmd<'_, Sha256>>(&[test_vector.msg], &[DST])
-                    .unwrap();
+            let pt = NistP256::hash_from_bytes::<ExpandMsgXmd<Sha256>>(&[test_vector.msg], &[DST])
+                .unwrap();
             assert_point_eq!(pt, test_vector.p_x, test_vector.p_y);
         }
     }
@@ -284,7 +283,7 @@ mod tests {
                 .to_be_bytes();
 
             for counter in 0_u8..=u8::MAX {
-                let scalar = NistP256::hash_to_scalar::<ExpandMsgXmd<'_, Sha256>>(
+                let scalar = NistP256::hash_to_scalar::<ExpandMsgXmd<Sha256>>(
                     &[
                         test_vector.seed,
                         &key_info_len,
