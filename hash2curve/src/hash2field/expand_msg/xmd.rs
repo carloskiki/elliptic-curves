@@ -57,7 +57,7 @@ where
 
         // `255 * <b_in_bytes>` can not exceed `u16::MAX`
         if usize::from(len_in_bytes.get()) > 255 * b_in_bytes {
-            return Err(ExpandMsgXmdError::LengthTooLarge);
+            return Err(ExpandMsgXmdError::LengthTooBig);
         }
 
         let domain = Domain::xmd::<HashT>(dst)?;
@@ -137,14 +137,14 @@ pub enum ExpandMsgXmdError {
     /// The length in bytes is too large.
     ///
     /// It did not respect `len_in_bytes <= 255 * HashT::OutputSize`.
-    LengthTooLarge,
+    LengthTooBig,
 }
 
 impl core::fmt::Display for ExpandMsgXmdError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::Dst(e) => write!(f, "{e}"),
-            Self::LengthTooLarge => write!(f, "length in bytes exceeds the maximum allowed value"),
+            Self::LengthTooBig => write!(f, "length in bytes exceeds the maximum allowed value"),
         }
     }
 }
